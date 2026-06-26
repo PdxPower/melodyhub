@@ -80,6 +80,11 @@ body {
 
 /* Song Grid */
 .song-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px 12px; padding:0 20px 20px; flex-shrink:0; }
+
+/* Play History Mini Cards */
+.song-card-mini { flex-shrink:0; width:64px; cursor:pointer; text-align:center; }
+.cover-mini { width:64px; height:64px; border-radius:12px; overflow:hidden; position:relative; }
+.mini-name { font-size:11px; color:var(--secondary); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:64px; }
 .song-card {
   background:var(--card); border:1px solid var(--card-border); border-radius:16px;
   overflow:hidden; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;
@@ -344,6 +349,101 @@ body {
 /* Animations */
 @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
 .pulse { animation:pulse 2s ease-in-out infinite; }
+
+/* === Shared Overlay === */
+.overlay-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 1000;
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.overlay-mask.center { align-items: center; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* === Action Sheet === */
+.action-sheet {
+  width: 100%; max-width: 390px;
+  background: var(--card); border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.action-sheet .sheet-handle {
+  display: flex; justify-content: center; padding: 10px 0 4px;
+}
+.action-sheet .sheet-handle div {
+  width: 36px; height: 4px; background: var(--dim); border-radius: 2px;
+}
+.sheet-row {
+  height: 52px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s;
+}
+.sheet-row:hover { background: rgba(255,255,255,0.05); }
+.sheet-row.rename { color: var(--text); font-size: 16px; font-weight: 500; font-family: inherit; }
+.sheet-row.delete { color: #EF4444; font-size: 16px; font-weight: 500; font-family: inherit; }
+.sheet-row.cancel { color: var(--text); font-size: 16px; font-weight: 500; font-family: inherit; }
+.sheet-divider { height: 1px; background: rgba(255,255,255,0.08); }
+.sheet-gap { height: 8px; background: rgba(255,255,255,0.06); }
+
+/* === Modal Dialog (通用) === */
+.modal-dialog {
+  width: 320px;
+  background: var(--card); border-radius: 16px;
+  padding: 24px; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-dialog .modal-title {
+  font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px;
+}
+.modal-input-label {
+  font-size: 13px; font-weight: 500; color: var(--secondary); margin-bottom: 8px;
+}
+.modal-input-box {
+  width: 100%; height: 44px; padding: 0 14px;
+  background: var(--bg); border: 1px solid rgba(124,58,237,0.5);
+  border-radius: 10px; font-size: 15px; color: var(--text);
+  font-family: inherit; outline: none; box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.modal-input-box:focus { border-color: var(--primary); }
+.modal-btn-row {
+  display: flex; gap: 12px; margin-top: 20px;
+}
+.modal-btn {
+  flex: 1; height: 44px; border-radius: 10px; border: none;
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.modal-btn:hover { opacity: 0.9; }
+.modal-btn.cancel {
+  background: var(--bg); color: var(--secondary);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.modal-btn.primary {
+  background: var(--primary); color: var(--text);
+}
+.modal-btn.danger {
+  background: #EF4444; color: var(--text);
+}
+
+/* Delete Dialog specific */
+.delete-dialog { width: 300px; }
+.delete-warn-circle {
+  width: 44px; height: 44px; border-radius: 22px;
+  background: rgba(239,68,68,0.15);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.delete-warn-icon {
+  font-size: 24px; font-weight: 700; color: #EF4444; line-height: 1;
+}
+.delete-title { text-align: center; }
+.delete-msg {
+  font-size: 14px; color: var(--secondary); text-align: center;
+  line-height: 20px; margin-bottom: 4px;
+}
 </style>
 </head>
 <body>
@@ -373,13 +473,15 @@ body {
       </div>
     </div>
     <div class="category-chips" id="lib-chips"></div>
-    <div style="display:flex;justify-content:flex-end;padding:0 20px 4px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px 4px">
       <span style="font-size:12px;color:var(--secondary);cursor:pointer;display:flex;align-items:center;gap:4px" onclick="document.getElementById('import-file-input').click()">
         <span style="font-size:14px">+</span> 导入音乐
       </span>
+      <span style="font-size:12px;color:var(--dim);cursor:pointer" id="lib-sort-btn" onclick="cycleLibSort()">⇅ 排序</span>
     </div>
     <input type="file" id="import-file-input" accept="audio/*" multiple style="display:none" onchange="importSelectedFiles(this.files)">
     <div class="section-title" id="lib-section-title"></div>
+    <div id="lib-history" style="padding:0 20px 8px;display:none"></div>
     <div class="content-area">
       <div class="song-grid" id="lib-song-grid"></div>
     </div>
@@ -704,6 +806,53 @@ body {
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!--  操作菜单 (Action Sheet)                                       -->
+<!-- ============================================================ -->
+<div id="action-sheet-overlay" class="overlay-mask" style="display:none" onclick="hideActionSheet()">
+  <div class="action-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"><div></div></div>
+    <div class="sheet-row rename" onclick="showRenameDialog()">重命名</div>
+    <div class="sheet-divider"></div>
+    <div class="sheet-row delete" onclick="showDeleteConfirm()">删除</div>
+    <div class="sheet-gap"></div>
+    <div class="sheet-row cancel" onclick="hideActionSheet()">取消</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  重命名对话框                                                  -->
+<!-- ============================================================ -->
+<div id="rename-dialog-overlay" class="overlay-mask center" style="display:none" onclick="hideRenameDialog()">
+  <div class="modal-dialog" onclick="event.stopPropagation()">
+    <div class="modal-title">重命名</div>
+    <div class="modal-input-label">歌单名称</div>
+    <input type="text" class="modal-input-box" id="rename-input" placeholder="输入歌单名称" autocomplete="off"
+      onkeydown="if(event.key==='Enter')confirmRename();if(event.key==='Escape')hideRenameDialog()">
+    <div class="modal-btn-row">
+      <button class="modal-btn cancel" onclick="hideRenameDialog()">取消</button>
+      <button class="modal-btn primary" onclick="confirmRename()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  删除确认弹窗                                                  -->
+<!-- ============================================================ -->
+<div id="delete-dialog-overlay" class="overlay-mask center" style="display:none" onclick="hideDeleteConfirm()">
+  <div class="modal-dialog delete-dialog" onclick="event.stopPropagation()">
+    <div class="delete-warn-circle">
+      <span class="delete-warn-icon">!</span>
+    </div>
+    <div class="modal-title delete-title">确认删除</div>
+    <p class="delete-msg" id="delete-msg-text">删除后无法恢复，确定要删除吗？</p>
+    <div class="modal-btn-row">
+      <button class="modal-btn cancel" onclick="hideDeleteConfirm()">取消</button>
+      <button class="modal-btn danger" onclick="confirmDelete()">删除</button>
+    </div>
+  </div>
+</div>
+
 <!-- 前端配置 — 应用名、导航、UI文案等 -->
 <script src="static/data.js"></script>
 <!-- 后端模拟数据 -->
@@ -830,6 +979,8 @@ function playSong(songId, noSwitch) {
   for (var i = 0; i < playQueue.length; i++) {
     if (playQueue[i].id === songId) { currentQueueIndex = i; break; }
   }
+  // 记录播放历史
+  recordPlayHistory(songId);
   fillPlayer(song, currentPlayerState);
   updateMinibar(song);
   // 保存为最后播放的歌曲
@@ -969,7 +1120,8 @@ function fillPlaylistDetail(pl) {
 
   document.getElementById('pl-detail-songs').innerHTML = songs.map(function(s, idx) {
     cacheSong(s);
-    return '<div class="pl-song-row" onclick="playSong(\'' + s.id + '\')">' +
+    return '<div class="pl-song-row" draggable="true" data-song-id="' + s.id + '" onclick="playSong(\'' + s.id + '\')" ondragstart="playlistDragStart(event)" ondragover="playlistDragOver(event)" ondrop="playlistDrop(event)" ondragend="playlistDragEnd(event)">' +
+      '<span class="pl-drag-handle" draggable="true" style="cursor:grab;font-size:14px;color:var(--dim);padding-right:8px;user-select:none">⠿</span>' +
       '<span class="pl-song-num">' + (idx + 1) + '</span>' +
       '<div class="pl-song-info">' +
         '<div class="pl-song-title">' + s.name + '</div>' +
@@ -997,33 +1149,168 @@ function fillPlaylistDetail(pl) {
 // ============================================================
 //  歌单编辑：菜单 / 重命名 / 删除
 // ============================================================
+
+// ---- 操作菜单 ----
 function showPlaylistMenu() {
-  var choice = confirm('确定 — 重命名歌单 / 取消 — 删除歌单\n\n请选择：');
-  if (choice) {
-    var name = prompt('请输入新歌单名称：');
-    if (name && name.trim()) {
-      api.renamePlaylist(currentPlaylistId, name.trim()).then(function() {
-        openPlaylistDetail(currentPlaylistId);
-        refreshPlaylists();
-      });
-    }
-  } else {
-    if (confirm('确定要删除该歌单吗？此操作不可恢复！')) {
-      api.deletePlaylist(currentPlaylistId).then(function() {
-        switchTab(4);
-        refreshPlaylists();
-      });
-    }
-  }
+  document.getElementById('action-sheet-overlay').style.display = 'flex';
 }
 
-function removeSongFromPlaylist(songId, e) {
-  e.stopPropagation();
-  e.preventDefault();
-  api.removeSongFromPlaylist(currentPlaylistId, songId).then(function() {
+function hideActionSheet() {
+  document.getElementById('action-sheet-overlay').style.display = 'none';
+}
+
+// ---- 重命名对话框 ----
+function showRenameDialog() {
+  hideActionSheet();
+  createPlaylistCallback = null;
+  var title = document.querySelector('#rename-dialog-overlay .modal-title');
+  if (title) title.textContent = '重命名';
+  var nameEl = document.getElementById('pl-detail-name');
+  var input = document.getElementById('rename-input');
+  input.value = nameEl ? nameEl.textContent : '';
+  input.placeholder = '输入新名称';
+  setTimeout(function() {
+    document.getElementById('rename-dialog-overlay').style.display = 'flex';
+    input.focus();
+    input.select();
+  }, 150);
+}
+
+function hideRenameDialog() {
+  document.getElementById('rename-dialog-overlay').style.display = 'none';
+}
+
+// ---- 新建歌单对话框（复用重命名弹窗） ----
+var createPlaylistCallback = null;
+function showCreatePlaylistDialog(callback) {
+  createPlaylistCallback = callback;
+  var title = document.querySelector('#rename-dialog-overlay .modal-title');
+  if (title) title.textContent = '新建歌单';
+  var input = document.getElementById('rename-input');
+  input.value = '';
+  input.placeholder = '输入歌单名称';
+  hideDeleteConfirm();
+  document.getElementById('rename-dialog-overlay').style.display = 'flex';
+  setTimeout(function() { input.focus(); }, 150);
+}
+
+function confirmRename() {
+  var newName = document.getElementById('rename-input').value.trim();
+  if (!newName) return;
+  hideRenameDialog();
+  // 回调模式（新建歌单）
+  if (createPlaylistCallback) {
+    api.createPlaylist(newName).then(function(res) {
+      if (res.success) {
+        refreshPlaylists();
+        if (createPlaylistCallback) createPlaylistCallback(res.playlist);
+        createPlaylistCallback = null;
+      }
+    });
+    return;
+  }
+  // 默认模式（重命名当前歌单）
+  api.renamePlaylist(currentPlaylistId, newName).then(function() {
     openPlaylistDetail(currentPlaylistId);
     refreshPlaylists();
   });
+}
+
+function hideRenameDialog() {
+  document.getElementById('rename-dialog-overlay').style.display = 'none';
+  var title = document.querySelector('#rename-dialog-overlay .modal-title');
+  if (title) title.textContent = '重命名';
+}
+
+// ---- 删除确认弹窗 ----
+var pendingConfirm = null;
+var pendingDeleteSongId = null;
+
+function showDeleteConfirm() {
+  hideActionSheet();
+  hideDeleteConfirm();
+  pendingDeleteSongId = null; pendingConfirm = null;
+  var nameEl = document.getElementById('pl-detail-name');
+  var name = nameEl ? nameEl.textContent : '';
+  document.getElementById('delete-msg-text').textContent = '删除后无法恢复，确定要删除「' + name + '」吗？';
+  setTimeout(function() {
+    document.getElementById('delete-dialog-overlay').style.display = 'flex';
+  }, 150);
+}
+
+function hideDeleteConfirm() {
+  document.getElementById('delete-dialog-overlay').style.display = 'none';
+  pendingConfirm = null;
+  pendingDeleteSongId = null;
+}
+
+function confirmDelete() {
+  var deleteSong = pendingDeleteSongId;
+  var callback = pendingConfirm;
+  hideDeleteConfirm();
+  if (deleteSong) {
+    api.removeSongFromPlaylist(currentPlaylistId, deleteSong).then(function() {
+      openPlaylistDetail(currentPlaylistId);
+      refreshPlaylists();
+    });
+    return;
+  }
+  if (callback) { callback(); return; }
+  api.deletePlaylist(currentPlaylistId).then(function() {
+    switchTab(4);
+    refreshPlaylists();
+  });
+}
+
+var pendingDeleteSongId = null;
+function removeSongFromPlaylist(songId, e) {
+  e.stopPropagation();
+  e.preventDefault();
+  hideDeleteConfirm();
+  pendingConfirm = null; pendingDeleteSongId = songId;
+  var song = songCache[songId];
+  var name = song ? song.name : '这首歌';
+  document.getElementById('delete-msg-text').textContent = '确定要从歌单中移除「' + name + '」吗？';
+  document.getElementById('delete-dialog-overlay').style.display = 'flex';
+}
+
+// ---- 拖拽排序 ----
+var playlistDragItem = null;
+function playlistDragStart(e) {
+  playlistDragItem = e.currentTarget;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function() { playlistDragItem.style.opacity = '0.4'; }, 0);
+}
+function playlistDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function playlistDrop(e) {
+  e.preventDefault();
+  if (!playlistDragItem || playlistDragItem === e.currentTarget) return;
+  var list = document.getElementById('pl-detail-songs');
+  var all = list.querySelectorAll('.pl-song-row');
+  var draggedIdx = Array.from(all).indexOf(playlistDragItem);
+  var dropIdx = Array.from(all).indexOf(e.currentTarget);
+  if (draggedIdx < dropIdx) {
+    list.insertBefore(playlistDragItem, all[dropIdx].nextSibling);
+  } else {
+    list.insertBefore(playlistDragItem, all[dropIdx]);
+  }
+  // 刷新编号
+  var final = list.querySelectorAll('.pl-song-row');
+  for (var i = 0; i < final.length; i++) {
+    var num = final[i].querySelector('.pl-song-num');
+    if (num) num.textContent = i + 1;
+  }
+  var ids = Array.from(final).map(function(r) { return r.getAttribute('data-song-id'); });
+  api.reorderPlaylistSongs(currentPlaylistId, ids).then(function() {
+    refreshPlaylists();
+  });
+}
+function playlistDragEnd(e) {
+  playlistDragItem.style.opacity = '1';
+  playlistDragItem = null;
 }
 
 function toggleHeart(songId, e) {
@@ -1080,6 +1367,22 @@ function showToast(msg) {
   toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:1000;pointer-events:none;';
   document.body.appendChild(toast);
   setTimeout(function() { toast.remove(); }, 2000);
+}
+
+// ---- 播放历史 ----
+function recordPlayHistory(songId) {
+  var key = 'melodyhub_history';
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+  // 去重并前移
+  hist = hist.filter(function(id) { return id !== songId; });
+  hist.unshift(songId);
+  hist = hist.slice(0, 20);
+  localStorage.setItem(key, JSON.stringify(hist));
+}
+
+function getPlayHistory() {
+  try { return JSON.parse(localStorage.getItem('melodyhub_history') || '[]'); } catch(e) { return []; }
 }
 
 function escapeAttr(s) {
@@ -1166,11 +1469,9 @@ function addToPlaylist(playlistId) {
 }
 
 function createAndAddToPlaylist() {
-  var name = prompt('输入新歌单名称：');
-  if (!name || !name.trim()) return;
-  api.createPlaylist(name.trim()).then(function(res) {
-    if (res && res.playlist && res.playlist.id) {
-      addToPlaylist(res.playlist.id);
+  showCreatePlaylistDialog(function(pl) {
+    if (pl && pl.id) {
+      addToPlaylist(pl.id);
     }
   });
 }
@@ -1227,6 +1528,9 @@ var api = {
   removeSongFromPlaylist: function(playlistId, songId) {
     if (USE_MOCK) return Promise.resolve({ success: true });
     return fetch('/api/playlists/'+encodeURIComponent(playlistId)+'/songs/'+encodeURIComponent(songId), { method:'DELETE' }).then(r => r.json());
+  },
+  reorderPlaylistSongs: function(playlistId, songIds) {
+    return fetch('/api/playlists/'+encodeURIComponent(playlistId)+'/reorder', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({songIds:songIds}) }).then(r => r.json());
   },
   addToPlaylist: function(playlistId, songId, songName, songArtist) {
     if (USE_MOCK) return Promise.resolve({ success: true });
@@ -1289,6 +1593,24 @@ function fillAllTimes() {
 // ============================================================
 var allLibrarySongs = [];
 var activeLibChip = '全部';
+var libSortMode = 0; // 0=最新添加, 1=标题A-Z, 2=艺术家A-Z
+
+function cycleLibSort() {
+  libSortMode = (libSortMode + 1) % 3;
+  var labels = ['⇅ 最新添加', '⇅ 标题 A-Z', '⇅ 艺术家 A-Z'];
+  document.getElementById('lib-sort-btn').textContent = labels[libSortMode];
+  applySortAndRender();
+}
+
+function applySortAndRender() {
+  var sorted = allLibrarySongs.slice();
+  if (libSortMode === 1) sorted.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'zh'); });
+  else if (libSortMode === 2) sorted.sort(function(a, b) { return (a.artist || '').localeCompare(b.artist || '', 'zh'); });
+  // mode 0 = keep original (DB order = newest first)
+  if (activeLibChip === '艺术家') renderArtistView(sorted);
+  else if (activeLibChip === '专辑') renderAlbumView(sorted);
+  else renderLibraryContent(sorted);
+}
 
 function fillLibrary(songs) {
   allLibrarySongs = songs;
@@ -1304,10 +1626,7 @@ function fillLibrary(songs) {
       activeLibChip = cat;
       var all = document.querySelectorAll('#lib-chips .chip');
       for (var j = 0; j < all.length; j++) { all[j].classList.toggle('active', all[j].textContent.trim() === cat); }
-      if (cat === '全部') { renderLibraryGrid(allLibrarySongs); }
-      else if (cat === '艺术家') { renderArtistView(allLibrarySongs); }
-      else if (cat === '最近添加') { renderLibraryGrid(allLibrarySongs); }
-      else if (cat === '专辑') { renderAlbumView(allLibrarySongs); }
+      applySortAndRender();
     });
   }
   // 激活第一个chip
@@ -1315,11 +1634,29 @@ function fillLibrary(songs) {
   // 有歌曲时显示搜索栏
   var searchWrap = document.getElementById('lib-search-wrap');
   if (searchWrap) searchWrap.style.display = (songs && songs.length > 0) ? 'block' : 'none';
-  renderLibraryGrid(songs);
+  renderLibraryContent(songs);
+  updateHistorySection();
   document.getElementById('tabbar-0').innerHTML = tabBarHTML(0);
 }
 
-function renderLibraryGrid(songs) {
+function updateHistorySection() {
+  var history = getPlayHistory();
+  var histDiv = document.getElementById('lib-history');
+  if (!histDiv) return;
+  if (history.length === 0) { histDiv.style.display = 'none'; return; }
+  histDiv.style.display = 'block';
+  var items = history.slice(0, 6).map(function(id) {
+    var s = songCache[id];
+    if (!s) return '';
+    return '<div class="song-card-mini" onclick="playSong(\'' + id + '\')">' +
+      '<div class="cover-mini" style="background:' + gradientCSS(s.coverGradient) + ';position:relative">' + coverImg(id, s._source, s._pic_id) + '</div>' +
+      '<div class="mini-name">' + s.name + '</div>' +
+    '</div>';
+  }).filter(Boolean).join('');
+  histDiv.innerHTML = '<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + items + '</div>';
+}
+
+function renderLibraryContent(songs) {
   var grid = document.getElementById('lib-song-grid');
   if (!songs || songs.length === 0) {
     grid.style.display = 'block';
@@ -1341,17 +1678,12 @@ function renderLibraryGrid(songs) {
 function filterLibrary() {
   var q = (document.getElementById('lib-search-input') || {}).value || '';
   q = q.trim().toLowerCase();
-  if (!q) { 
-    if (activeLibChip === '艺术家') renderArtistView(allLibrarySongs);
-    else if (activeLibChip === '专辑') renderAlbumView(allLibrarySongs);
-    else renderLibraryGrid(allLibrarySongs);
-    return;
-  }
+  if (!q) { applySortAndRender(); return; }
   var filtered = allLibrarySongs.filter(function(s) {
     return (s.name && s.name.toLowerCase().indexOf(q) !== -1) || (s.artist && s.artist.toLowerCase().indexOf(q) !== -1);
   });
   if (activeLibChip === '艺术家') renderArtistView(filtered);
-  else renderLibraryGrid(filtered);
+  else renderLibraryContent(filtered);
 }
 
 function renderArtistView(songs) {
@@ -1483,7 +1815,7 @@ function fillPlaylists(plData) {
   document.getElementById('pl-add-btn').style.cursor = 'pointer';
   document.getElementById('pl-items').innerHTML = plData.items.map(function(p) {
     var coverImg = p.firstPicId ? '<img src="/api/cover/' + p.firstPicId + (p.firstSource ? '?source=' + p.firstSource : '') + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">' : '';
-    return '<div class="playlist-row" onclick="openPlaylistDetail(\'' + p.id + '\')">' +
+    return '<div class="playlist-row" data-pl-id="' + p.id + '">' +
       '<div class="pl-cover" style="background:' + gradientCSS(p.coverGradient) + ';overflow:hidden;position:relative">' + coverImg + '</div>' +
       '<div class="pl-info"><div class="pl-name">' + p.name + '</div><div class="pl-count">' + p.songCount + '首 · ' + p.durationLabel + '</div></div>' +
       '<span class="pl-delete" data-pl-id="' + p.id + '" style="cursor:pointer;color:#999;font-size:18px;margin-left:auto" title="删除歌单">✕</span>' +
@@ -1751,25 +2083,36 @@ function bindEvents() {
   if (addBtn) {
     addBtn.style.cursor = 'pointer';
     addBtn.addEventListener('click', function() {
-      var name = prompt('输入歌单名称：');
-      if (!name || !name.trim()) return;
-      api.createPlaylist(name.trim()).then(function(res) {
-        if (res.success) refreshPlaylists();
+      showCreatePlaylistDialog(function(pl) {
+        if (pl) refreshPlaylists();
       });
     });
   }
 
   document.addEventListener('click', function(e) {
     var delBtn = e.target.closest('.pl-delete');
-    if (!delBtn) return;
-    e.stopPropagation();
-    e.preventDefault();
-    var plId = delBtn.getAttribute('data-pl-id');
-    if (!plId) return;
-    if (!confirm('确定删除这个歌单吗？')) return;
-    api.deletePlaylist(plId).then(function(res) {
-      if (res.success) refreshPlaylists();
-    });
+    if (delBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      var plId = delBtn.getAttribute('data-pl-id');
+      if (!plId) return;
+      hideDeleteConfirm();
+      pendingDeleteSongId = null; pendingConfirm = function() {
+        api.deletePlaylist(plId).then(function(res) {
+          if (res.success) refreshPlaylists();
+        });
+      };
+      var row = delBtn.closest('.playlist-row');
+      var name = row ? (row.querySelector('.pl-name') || {}).textContent || '' : '';
+      document.getElementById('delete-msg-text').textContent = '确定要删除歌单「' + name + '」吗？\n歌单中的歌曲不会被删除。';
+      document.getElementById('delete-dialog-overlay').style.display = 'flex';
+      return;
+    }
+    // 点击歌单行：打开详情
+    var row = e.target.closest('.playlist-row');
+    if (row && row.getAttribute('data-pl-id')) {
+      openPlaylistDetail(row.getAttribute('data-pl-id'));
+    }
   });
 }
 
@@ -1853,7 +2196,7 @@ async function init() {
   });
   audio.addEventListener('play', function() { isPlaying = true; updatePlayBtn(); startProgressTimer(); });
   audio.addEventListener('timeupdate', function() {
-    if (!progressDragRef.val && audio.duration) { progress = audio.currentTime / audio.duration; renderProgress(); }
+    if (!progressDragRef.val && audio.duration) { progress = audio.currentTime / audio.duration; renderProgress(); updateMinibarProgress(); }
   });
   audio.addEventListener('loadedmetadata', function() { TOTAL_DURATION = audio.duration; renderDuration(); });
 

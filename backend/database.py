@@ -140,9 +140,9 @@ def _playlist_to_dict(row: sqlite3.Row, song_count: int, duration_label: str = "
         "songCount": song_count,
         "durationLabel": duration_label or f"{song_count}首",
         "coverGradient": gradient,
-        "firstSongId": row["first_song_id"] or "",
-        "firstPicId": row["first_pic_id"] or "",
-        "firstSource": row["first_source"] or "",
+        "firstSongId": (row["first_song_id"] if "first_song_id" in row.keys() else ""),
+        "firstPicId": (row["first_pic_id"] if "first_pic_id" in row.keys() else ""),
+        "firstSource": (row["first_source"] if "first_source" in row.keys() else ""),
     }
 
 
@@ -292,6 +292,17 @@ def remove_song_from_playlist(playlist_id: str, song_id: str) -> bool:
     conn = _get_conn()
     conn.execute("DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?",
                  (playlist_id, song_id))
+    conn.commit()
+    return True
+
+
+def reorder_playlist_songs(playlist_id: str, song_ids: list[str]) -> bool:
+    """重新排序歌单中的歌曲。"""
+    conn = _get_conn()
+    for i, sid in enumerate(song_ids):
+        conn.execute(
+            "UPDATE playlist_songs SET position = ? WHERE playlist_id = ? AND song_id = ?",
+            (i, playlist_id, sid))
     conn.commit()
     return True
 

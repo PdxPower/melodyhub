@@ -4,6 +4,11 @@
 # Node
 node_modules/
 
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
 # Python
 __pycache__/
 *.pyc

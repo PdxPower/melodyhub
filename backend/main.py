@@ -302,6 +302,15 @@ async def remove_song_from_playlist(playlist_id: str, song_id: str):
 # ============================================================
 # API 端点 — 歌词（暂用模拟数据，真实优先）
 # ============================================================
+class ReorderSongsRequest(BaseModel):
+    songIds: list[str]
+
+@app.put("/api/playlists/{playlist_id}/reorder")
+async def reorder_playlist_songs(playlist_id: str, req: ReorderSongsRequest):
+    db.reorder_playlist_songs(playlist_id, req.songIds)
+    return {"success": True}
+
+
 @app.get("/api/lyrics")
 async def get_lyrics(songId: str = Query(default="s1")):
     if songId.isdigit():
@@ -382,6 +391,49 @@ async def download_song(req: DownloadRequest):
                         f.write(chunk)
 
         file_size = file_path.stat().st_size
+
+        # 下载封面图（缓存到本地）
+        pic_id = req.pic_id
+        if pic_id:
+            cover_path = COVER_DIR / f"{pic_id}.jpg"
+            if not cover_path.exists():
+                try:
+                    proxy_url = f"{METING_BASE_URL}/pic_proxy?id={pic_id}&source={req.source}&size=500"
+                    async with httpx.AsyncClient(timeout=15.0) as client:
+                        cresp = await client.get(proxy_url)
+                        if cresp.status_code == 200 and len(cresp.content) > 100:
+                            cover_path.write_bytes(cresp.content)
+                        else:
+                            pic_id = ""  # 封面无效，清空
+                except Exception:
+                    pic_id = ""
+            # Last.fm fallback
+            if not pic_id and req.artist and req.name:
+                try:
+                    LASTFM_KEY = "1a9a3e5ba4a5a4c3c3e44b6a8a98f2a2"
+                    lfm_url = (
+                        "https://ws.audioscrobbler.com/2.0/"
+                        "?method=track.getInfo&api_key=" + LASTFM_KEY +
+                        "&artist=" + req.artist + "&track=" + req.name + "&format=json"
+                    )
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        lfm = await client.get(lfm_url)
+                        lfm.raise_for_status()
+                        data = lfm.json()
+                        track = data.get("track") or {}
+                        album = track.get("album") or {}
+                        images = album.get("image") or []
+                        cover_url = None
+                        for img in images:
+                            if img.get("#text"):
+                                cover_url = img["#text"]
+                        if cover_url:
+                            c_resp = await client.get(cover_url)
+                            if c_resp.status_code == 200 and len(c_resp.content) > 100:
+                                cover_path.write_bytes(c_resp.content)
+                                pic_id = pic_id or req.pic_id  # 使用原pic_id作为缓存键
+                except Exception as e:
+                    print(f"⚠️ Cover fallback failed: {e}")
 
         # 下载成功后自动入库
         db.add_song({
