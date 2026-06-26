@@ -1,0 +1,88 @@
+{
+  "appName": "MelodyHub",
+  "statusBarTime": "9:41",
+
+  "tabs": [
+    { "screenIndex": 0, "icon": "♫", "iconSize": 16, "label": "音乐库" },
+    { "screenIndex": 1, "icon": "⌕", "iconSize": 20, "label": "搜索" },
+    { "screenIndex": 3, "icon": "♥", "iconSize": 16, "label": "收藏" },
+    { "screenIndex": 4, "icon": "○", "iconSize": 18, "label": "我的" }
+  ],
+
+  "library": {
+    "categories": ["全部", "最近添加", "艺术家", "专辑"],
+    "sectionTitle": "最近播放",
+    "songs": [
+      { "id": "s1", "name": "Faded",         "artist": "Alan Walker",  "duration": "03:32", "durationSec": 212, "coverGradient": ["#7C3AED", "#22C55E"], "liked": true  },
+      { "id": "s2", "name": "晴天",           "artist": "周杰伦",       "duration": "04:29", "durationSec": 269, "coverGradient": ["#3366CC", "#CC3344"], "liked": true  },
+      { "id": "s3", "name": "Lemon",          "artist": "米津玄师",     "duration": "04:16", "durationSec": 256, "coverGradient": ["#E6801A", "#E63366"], "liked": true  },
+      { "id": "s4", "name": "Shape of You",   "artist": "Ed Sheeran",   "duration": "03:54", "durationSec": 234, "coverGradient": ["#4D8C50", "#1A4D99"], "liked": true  }
+    ]
+  },
+
+  "search": {
+    "placeholder": "搜索歌曲、艺术家...",
+    "categories": ["全部", "网易云", "QQ", "酷狗"],
+    "defaultQuery": "Faded",
+    "results": [
+      { "id": "r1", "name": "Faded",               "artist": "Alan Walker", "duration": "03:32", "coverGradient": ["#7C3AED", "#22C55E"], "liked": false },
+      { "id": "r2", "name": "Faded (Restrung)",     "artist": "Alan Walker", "duration": "04:12", "coverGradient": ["#3366CC", "#CC3344"], "liked": true  },
+      { "id": "r3", "name": "Faded (Tiesto Remix)", "artist": "Alan Walker", "duration": "03:50", "coverGradient": ["#E6801A", "#E63366"], "liked": false },
+      { "id": "r4", "name": "Faded (Acoustic)",     "artist": "Alan Walker", "duration": "03:18", "coverGradient": ["#4D8C50", "#1A4D99"], "liked": true  }
+    ]
+  },
+
+  "player": {
+    "backLabel": "← 音乐库",
+    "currentSongId": "s1",
+    "initialProgress": 0.40,
+    "initialVolume": 0.55,
+    "controls": {
+      "shuffle": "↻",
+      "prev": "◀",
+      "next": "▶",
+      "repeat": "↺"
+    }
+  },
+
+  "favorites": {
+    "title": "我喜欢",
+    "heartIcon": "♥",
+    "totalLabel": "12首",
+    "items": [
+      { "songId": "s1", "name": "Faded",         "artist": "Alan Walker", "duration": "03:32", "coverGradient": ["#7C3AED", "#22C55E"] },
+      { "songId": "s2", "name": "晴天",           "artist": "周杰伦",       "duration": "04:29", "coverGradient": ["#3366CC", "#CC3344"] },
+      { "songId": "s3", "name": "Lemon",          "artist": "米津玄师",     "duration": "04:16", "coverGradient": ["#E6801A", "#E63366"] },
+      { "songId": "s4", "name": "Shape of You",   "artist": "Ed Sheeran",   "duration": "03:54", "coverGradient": ["#4D8C50", "#1A4D99"] }
+    ]
+  },
+
+  "playlists": {
+    "title": "我的歌单",
+    "addIcon": "+",
+    "items": [
+      { "id": "p1", "name": "学习BGM", "songCount": 8, "durationLabel": "32分钟", "coverGradient": ["#7C3AED", "#22C55E"] },
+      { "id": "p2", "name": "华语经典", "songCount": 15, "durationLabel": "58分钟", "coverGradient": ["#3366CC", "#CC3344"] },
+      { "id": "p3", "name": "欧美流行", "songCount": 6,  "durationLabel": "24分钟", "coverGradient": ["#E6801A", "#E63366"] },
+      { "id": "p4", "name": "日语精选", "songCount": 4,  "durationLabel": "18分钟", "coverGradient": ["#4D8C50", "#1A4D99"] }
+    ]
+  },
+
+  "lyrics": {
+    "songName": "Faded",
+    "artist": "Alan Walker",
+    "backLabel": "← 正在播放",
+    "pageLabel": "歌词",
+    "lines": [
+      { "text": "You were the shadow to my light",  "state": "past"    },
+      { "text": "Did you feel us",                   "state": "past"    },
+      { "text": "Another star, you fade away",        "state": "past"    },
+      { "text": "Afraid our aim is out of sight",    "state": "future" },
+      { "text": "Where are you now",                  "state": "active" },
+      { "text": "Was it all in my fantasy",           "state": "future" },
+      { "text": "Where are you now",                  "state": "future" },
+      { "text": "Were you only imaginary",            "state": "future" },
+      { "text": "Atlantis, under the sea",            "state": "future" }
+    ]
+  }
+}
